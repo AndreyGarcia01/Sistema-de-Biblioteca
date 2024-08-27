@@ -1,0 +1,193 @@
+import 'dart:io';
+
+void main() {
+  Library library = Library();
+
+  library.initializeBooks();
+  
+  while (true) {
+    print('\nSeja Bem Vindo à Biblioteca!');
+    print('1. Criar uma conta');
+    print('2. Retirar um livro');
+    print('3. Devolver um livro');
+    print('4. Adicionar um livro');
+    print('5. Ver os títulos disponíveis');
+    print('6. Sair');
+    stdout.write('Por favor, escolha uma opção: ');
+
+    String? choice = stdin.readLineSync();
+    if (choice == null || choice.isEmpty) {
+      print('Inválido. Por favor, tente novamente :)');
+      continue;
+    }
+
+    switch (choice) {
+      case '1':
+        library.createAccount();
+        break;
+      case '2':
+        library.withdrawBook();
+        break;
+      case '3':
+        library.returnBook();
+        break;
+      case '4':
+        library.addBook();
+        break;
+      case '5':
+        library.listAvailableBooks();
+        break;
+      case '6':
+        print('Obrigado por usar a Biblioteca. Adeus! :)');
+        exit(0);
+      default:
+        print('Escolha inválida. Por favor, tente novamente.');
+    }
+  }
+}
+
+class Library {
+  final List<UserAccount> accounts = [];
+  final List<Book> books = [];
+
+  void initializeBooks() {
+    books.addAll([
+      Book(title: 'O Senhor dos Anéis', available: true),
+      Book(title: 'Harry Potter e a Pedra Filosofal', available: true),
+      Book(title: '1984', available: true),
+      Book(title: 'A Revolução dos Bichos', available: true),
+      Book(title: 'Dom Casmurro', available: true),
+    ]);
+  }
+
+  void createAccount() {
+    stdout.write('Escreva seu nome: ');
+    String? name = stdin.readLineSync();
+    if (name == null || name.isEmpty) {
+      print('O nome não pode estar vazio.');
+      return;
+    }
+    UserAccount newAccount = UserAccount(name: name);
+    accounts.add(newAccount);
+    print('\nConta criada com sucesso! O número da sua conta é: ---> |${newAccount.accountNumber}|');
+  }
+
+  UserAccount? findAccount() {
+    stdout.write('Digite o número da sua conta: ');
+    String? accountNumberStr = stdin.readLineSync();
+    if (accountNumberStr == null || accountNumberStr.isEmpty) {
+      print('O número da conta não pode estar vazio.');
+      return null;
+    }
+
+    int? accountNumber = int.tryParse(accountNumberStr);
+    if (accountNumber == null) {
+      print('Número da conta inválido.');
+      return null;
+    }
+
+    for (var account in accounts) {
+      if (account.accountNumber == accountNumber) {
+        return account;
+      }
+    }
+
+    print('Conta não encontrada.');
+    return null;
+  }
+
+  void withdrawBook() {
+    UserAccount? account = findAccount();
+    if (account == null) return;
+
+    stdout.write('\nDigite o título do livro que deseja retirar: ');
+    String? title = stdin.readLineSync();
+    if (title == null || title.isEmpty) {
+      print('O título do livro não pode estar vazio.');
+      return;
+    }
+
+    Book? book = books.firstWhere(
+      (b) => b.title == title,
+      orElse: () => Book(title: '', available: false), 
+    );
+
+    if (book.title.isEmpty) {
+      print('Livro não encontrado.');
+      return;
+    }
+
+    if (book.available) {
+      book.available = false;
+      print('Livro retirado com sucesso: $title');
+    } else {
+      print('Livro não disponível.');
+    }
+  }
+
+  void returnBook() {
+    stdout.write('\nDigite o título do livro que deseja devolver: ');
+    String? title = stdin.readLineSync();
+    if (title == null || title.isEmpty) {
+      print('O título do livro não pode estar vazio.');
+      return;
+    }
+
+    Book? book = books.firstWhere(
+      (b) => b.title == title,
+      orElse: () => Book(title: '', available: false), 
+    );
+
+    if (book.title.isEmpty) {
+      print('Livro não encontrado.');
+      return;
+    }
+
+    book.available = true;
+    print('Livro devolvido com sucesso: $title');
+  }
+
+  void addBook() {
+    stdout.write('\nDigite o título do livro que deseja adicionar: ');
+    String? title = stdin.readLineSync();
+    if (title == null || title.isEmpty) {
+      print('O título do livro não pode estar vazio.');
+      return;
+    }
+
+    if (books.any((b) => b.title == title)) {
+      print('O livro já existe na biblioteca.');
+    } else {
+      books.add(Book(title: title, available: true));
+      print('Livro adicionado com sucesso: $title');
+    }
+  }
+
+  void listAvailableBooks() {
+    if (books.isEmpty) {
+      print('Nenhum livro disponível.');
+    } else {
+      print('Livros disponíveis:');
+      for (var book in books) {
+        String status = book.available ? 'Disponível' : 'Não disponível';
+        print('- ${book.title}: $status');
+      }
+    }
+  }
+}
+
+class UserAccount {
+  static int _nextAccountNumber = 1000;
+
+  final int accountNumber;
+  final String name;
+
+  UserAccount({required this.name}) : accountNumber = _nextAccountNumber++;
+}
+
+class Book {
+  final String title;
+  bool available;
+
+  Book({required this.title, this.available = true});
+}
